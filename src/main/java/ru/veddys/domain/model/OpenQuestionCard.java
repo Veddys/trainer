@@ -1,18 +1,18 @@
 package ru.veddys.domain.model;
 
 public class OpenQuestionCard {
+    private final Long id;
     private final String question;
     private final String expectedAnswer;
 
-    public OpenQuestionCard(String question, String expectedAnswer) {
-        if (question == null || question.isEmpty()) {
-            throw new IllegalArgumentException("question не может быть пустым");
-        }
-        if (expectedAnswer == null || expectedAnswer.isEmpty()) {
-            throw new IllegalArgumentException("expectedAnswer не может быть пустым");
-        }
+    public OpenQuestionCard(Long id, String question, String expectedAnswer) {
+        this.id = id;
         this.question = question;
         this.expectedAnswer = expectedAnswer;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getQuestion() {
@@ -20,11 +20,6 @@ public class OpenQuestionCard {
     }
 
     public boolean checkAnswer(String answer) {
-        if (answer == null) {
-            return false;
-        }
-        return expectedAnswer.equals(answer);
+        return expectedAnswer.equalsIgnoreCase(answer.trim());
     }
 }
-
-
