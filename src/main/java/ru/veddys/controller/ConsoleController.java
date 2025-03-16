@@ -1,66 +1,84 @@
 package ru.veddys.controller;
 
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
 import ru.veddys.domain.model.OpenQuestionCard;
 import ru.veddys.domain.service.QuestionService;
 
 import java.util.Optional;
 import java.util.Scanner;
 
-@Controller
+@Component
 public class ConsoleController {
-    private final QuestionService service;
-    private final Scanner scanner = new Scanner(System.in);
+  private static final String MENU = """
+          Введите [1], чтобы показать все задачи
+          Введите [2], чтобы добавить задачу
+          Введите [3], чтобы удалить задачу
+          Введите [4], чтобы найти задачу
+          Введите [5], чтобы выйти
+          """;
+  private final QuestionService service;
+  private final Scanner scanner;
 
-    public ConsoleController(QuestionService service) {
-        this.service = service;
+  public ConsoleController(QuestionService service) {
+    this.service = service;
+    scanner = new Scanner(System.in);
+  }
+
+  public void interactWithUser() {
+    while(true) {
+      printMenu();
+      String operationID = scanner.nextLine();
+      switch (operationID) {
+        case "1" -> printAllQuestions();
+        case "2" -> addQuestion();
+        case "3" -> removeQuestion();
+        case "4" -> findQuestion();
+        case "5" -> { return; }
+        default -> System.out.println("Неизвестная команда");
+      }
     }
+  }
 
-    public void interactWithUser() {
-        System.out.println("Добро пожаловать в систему вопросов!");
+  private void printMenu() {
+    System.out.println(MENU);
+  }
 
-        while (true) {
-            System.out.println("1 - Показать вопросы, 2 - Добавить, 3 - Найти, 4 - Выйти");
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+  private void printAllQuestions() {
+    System.out.println(service.getAll());
+  }
 
-            switch (choice) {
-                case 1 -> service.getAll().forEach(q -> System.out.println(q.getId() + ": " + q.getQuestion()));
-                case 2 -> addQuestion();
-                case 3 -> findQuestion();
-                case 4 -> {
-                    System.out.println("Выход...");
-                    return;
-                }
-                default -> System.out.println("Некорректный ввод!");
-            }
-        }
+  private void addQuestion() {
+    System.out.println("Введите код задачи");
+    String id = scanner.nextLine();
+    System.out.println("Введите название задачи");
+    String title = scanner.nextLine();
+    OpenQuestionCard question = new OpenQuestionCard(id, title);
+    service.save(question);
+  }
+
+  private void removeQuestion() {
+    System.out.println("Введите код задачи, которую хотите удалить");
+    String id = scanner.nextLine();
+    Optional<OpenQuestionCard> question = service.getByID(id);
+    if (question.isPresent()) {
+      System.out.println("Введите [Y], если точно хотите удалить задачу " + question.get());
+      String confirmation = scanner.nextLine();
+      if ("Y".equals(confirmation)) {
+        service.delete(question.get());
+      }
+    } else {
+      System.out.println("Такой задачи найти не удалось");
     }
+  }
 
-    private void addQuestion() {
-        System.out.print("Введите ID: ");
-        Long id = scanner.nextLong();
-        scanner.nextLine();
-
-        System.out.print("Введите вопрос: ");
-        String question = scanner.nextLine();
-
-        System.out.print("Введите ожидаемый ответ: ");
-        String answer = scanner.nextLine();
-
-        service.save(new OpenQuestionCard(id, question, answer));
-        System.out.println("Вопрос добавлен!");
+  private void findQuestion() {
+    System.out.println("Введите код задачи, которую хотите найти");
+    String id = scanner.nextLine();
+    Optional<OpenQuestionCard> question = service.getByID(id);
+    if (question.isPresent()) {
+      System.out.println(question.get());
+    } else {
+      System.out.println("Такой задачи найти не удалось");
     }
-
-    private void findQuestion() {
-        System.out.print("Введите ID вопроса: ");
-        Long id = scanner.nextLong();
-        scanner.nextLine();
-
-        Optional<OpenQuestionCard> question = service.getById(id);
-        question.ifPresentOrElse(
-            q -> System.out.println("Вопрос: " + q.getQuestion()),
-            () -> System.out.println("Вопрос не найден.")
-        );
-    }
+  }
 }

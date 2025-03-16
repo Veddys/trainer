@@ -1,40 +1,44 @@
 package ru.veddys.storage;
 
-import org.springframework.stereotype.Repository;
 import ru.veddys.domain.model.OpenQuestionCard;
 import ru.veddys.domain.repo.QuestionRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
-@Repository
 public class QuestionInMemoryStorage implements QuestionRepository {
-    private final List<OpenQuestionCard> questions = new ArrayList<>();
+  private final Map<String, OpenQuestionCard> question;
 
-    @Override
-    public List<OpenQuestionCard> findAll() {
-        return new ArrayList<>(questions);
-    }
+  public QuestionInMemoryStorage() {
+    question = new HashMap<>();
+  }
 
-    @Override
-    public Optional<OpenQuestionCard> findById(Long id) {
-        return questions.stream().filter(q -> q.getId().equals(id)).findFirst();
-    }
+  @Override
+  public List<OpenQuestionCard> findAll() {
+    return question.values().stream().toList();
+  }
 
-    @Override
-    public void add(OpenQuestionCard task) {
-        questions.add(task);
+  @Override
+  public Optional<OpenQuestionCard> findByID(String id) {
+    OpenQuestionCard openQuestionCard = question.get(id);
+    if (Objects.nonNull(openQuestionCard)) {
+      return Optional.of(openQuestionCard);
+    } else {
+      return Optional.empty();
     }
+  }
 
-    @Override
-    public void update(OpenQuestionCard task) {
-        remove(task.getId());
-        questions.add(task);
-    }
+  @Override
+  public void add(OpenQuestionCard task) {
+    question.put(task.getID(), task);
+  }
 
-    @Override
-    public void remove(Long id) {
-        questions.removeIf(q -> q.getId().equals(id));
-    }
+  @Override
+  public void update(OpenQuestionCard task) {
+    question.put(task.getID(), task);
+  }
+
+  @Override
+  public void remove(String id) {
+    question.remove(id);
+  }
 }
