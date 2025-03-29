@@ -4,115 +4,167 @@ import org.springframework.stereotype.Repository;
 import ru.veddys.domain.model.OpenQuestionCard;
 import ru.veddys.domain.repo.QuestionRepository;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public class QuestionJdbcDao implements QuestionRepository {
-    private static final String DDL_QUERY = """
-            CREATE TABLE questions (ID BIGINT PRIMARY KEY, question VARCHAR(100), answer VARCHAR(50))
-            """;
-    private static final String FIND_ALL_QUERY = """
-            SELECT ID, question, answer FROM questions
-            """;
-    private static final String FIND_BY_ID_QUERY = """
-            SELECT ID, question, answer FROM questions WHERE ID=?
-            """;
-    private static final String INSERT_CARD_QUERY = """
-            INSERT INTO questions(ID, question, answer) VALUES (?, ?, ?)
-            """;
-    private static final String UPDATE_CARD_QUERY = """
-            UPDATE questions SET question=?, answer=? WHERE ID=?
-            """;
-    private static final String DELETE_CARD_QUERY = """
-            DELETE FROM cards WHERE ID=?
-            """;
-    private final DataSource dataSource;
+  private static final String DDL_QUERY = """
+          CREATE TABLE questions (ID int AUTO_INCREMENT PRIMARY KEY,title VARCHAR(50))
+          """;
+  private static final String FIND_ALL_QUERY = """
+          SELECT id, title FROM questions
+          """;
+  private static final String FIND_BY_ID_QUERY = """
+          SELECT id, title FROM questions WHERE id = ?
+          """;
+  private static final String INSERT_TASK_QUERY = """
+          INSERT INTO questions(id, title) VALUES (?, ?)
+          """;
+  private static final String UPDATE_TASK_QUERY = """
+          UPDATE questions SET id=?, title=?
+          """;
+  private static final String DELETE_TASK_QUERY = """
+          DELETE FROM questions WHERE id=?
+          """;
 
-    public QuestionJdbcDao(DataSource dataSource) {
-        this.dataSource = dataSource;
-        initDataBase();
+  static {
+    try {
+      Class.forName("org.h2.Driver");
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
     }
+  }
 
-    public void initDataBase() {
-        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(DDL_QUERY)) {
-            statement.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+  public QuestionJdbcDao() {
+    initDataBase();
+  }
+
+  public void initDataBase() {
+    Connection connection = null;
+    try {
+      connection = getConnection();
+      PreparedStatement statement = connection.prepareStatement(DDL_QUERY);
+      statement.execute();
+      statement.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    } finally {
+      closeConnection(connection);
     }
+  }
 
-
-    @Override
-    public List<OpenQuestionCard> findAll() {
-        List<OpenQuestionCard> cards = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(FIND_ALL_QUERY); ResultSet rs = statement.executeQuery()) {
-            while (rs.next()) {
-                OpenQuestionCard card = new OpenQuestionCard(rs.getLong("ID"), rs.getString("question"), rs.getString("answer"));
-                cards.add(card);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return cards;
+  @Override
+  public List<OpenQuestionCard> findAll() {
+    Connection connection = null;
+    List<OpenQuestionCard> questions = new ArrayList<>();
+    try {
+      connection = getConnection();
+      PreparedStatement statement = connection.prepareStatement(FIND_ALL_QUERY);
+      ResultSet resultSet = statement.executeQuery();
+      while (resultSet.next()) {
+        OpenQuestionCard question = new OpenQuestionCard(
+                resultSet.getLong("id"),  // Используем getLong
+                resultSet.getString("title")
+        );
+        questions.add(question);
+      }
+      statement.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    } finally {
+      closeConnection(connection);
     }
+    return questions;
+  }
 
-    @Override
-    public Optional<OpenQuestionCard> findById(Long id) {
-        List<OpenQuestionCard> cards = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(FIND_BY_ID_QUERY)) {
-            statement.setLong(1, id);
-            ResultSet rs = statement.executeQuery();
-            while (rs.next()) {
-                OpenQuestionCard card = new OpenQuestionCard(rs.getLong("ID"), rs.getString("question"), rs.getString("answer"));
-                cards.add(card);
-            }
-            rs.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return cards.isEmpty() ? Optional.empty() : Optional.of(cards.getFirst());
+
+  @Override
+  public Optional<OpenQuestionCard> findByID(Long id) {
+    Connection connection = null;
+    List<OpenQuestionCard> OpenQuestionCard = new ArrayList<>();
+    try {
+      connection = getConnection();
+      PreparedStatement statement = connection.prepareStatement(FIND_BY_ID_QUERY);
+      statement.setLong(1, id);
+      ResultSet resultSet = statement.executeQuery();
+      while (resultSet.next()) {
+        OpenQuestionCard question = new OpenQuestionCard(resultSet.getLong("id"),
+                resultSet.getString("title"));
+        OpenQuestionCard.add(question);
+      }
+      statement.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    } finally {
+      closeConnection(connection);
     }
+    return OpenQuestionCard.isEmpty() ? Optional.empty() : Optional.of(OpenQuestionCard.get(0));
+  }
 
-    @Override
-    public void add(OpenQuestionCard card) {
-        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(INSERT_CARD_QUERY)) {
-            statement.setLong(1, card.getId());
-            statement.setString(2, card.getQuestion());
-            statement.setString(3, card.getExpectedAnswer());
-            statement.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+  @Override
+  public void add(OpenQuestionCard task) {
+    Connection connection = null;
+    try {
+      connection = getConnection();
+      PreparedStatement statement = connection.prepareStatement(INSERT_TASK_QUERY);
+      statement.setLong(1, task.getId());
+      statement.setString(2, task.getTitle());
+      statement.execute();
+      statement.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    } finally {
+      closeConnection(connection);
     }
+  }
 
-    @Override
-    public void update(OpenQuestionCard card) {
-        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(UPDATE_CARD_QUERY)) {
-            statement.setString(1, card.getQuestion());
-            statement.setString(2, card.getExpectedAnswer());
-            statement.setLong(3, card.getId());
-            statement.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+  @Override
+  public void update(OpenQuestionCard task) {
+    Connection connection = null;
+    try {
+      connection = getConnection();
+      PreparedStatement statement = connection.prepareStatement(UPDATE_TASK_QUERY);
+      statement.setLong(1, task.getId());
+      statement.setString(2, task.getTitle());
+      statement.execute();
+      statement.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    } finally {
+      closeConnection(connection);
     }
+  }
 
-    @Override
-    public void remove(Long id) {
-        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(DELETE_CARD_QUERY)) {
-            statement.setLong(1, id);
-            statement.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+  @Override
+  public void remove(String id) {
+    Connection connection = null;
+    try {
+      connection = getConnection();
+      PreparedStatement statement = connection.prepareStatement(DELETE_TASK_QUERY);
+      statement.setString(1, id);
+      statement.execute();
+      statement.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    } finally {
+      closeConnection(connection);
     }
+  }
+
+  private Connection getConnection() throws SQLException {
+    return DriverManager.getConnection("jdbc:h2:mem:question;DB_CLOSE_DELAY=-1",
+            "admin", "admin");
+  }
+
+  private void closeConnection(Connection connection) {
+    if (connection == null) return;
+    try {
+      connection.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
 }
