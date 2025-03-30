@@ -1,10 +1,10 @@
-package ru.veddys.gui.config;
+package ru.veddys.console.config;
 
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
-import ru.veddys.spring.hibernate.config.DbConfig;
+import ru.veddys.spring.jdbc.config.DbConfig;
 
 
 @Configuration

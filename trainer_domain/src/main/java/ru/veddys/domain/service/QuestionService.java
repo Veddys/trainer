@@ -10,42 +10,44 @@ import java.util.Optional;
 
 @Service
 public class QuestionService {
-    private final QuestionRepository repository;
+  private final QuestionRepository repository;
 
-    public QuestionService(QuestionRepository repository) {
-        this.repository = repository;
+  public QuestionService(QuestionRepository repository) {
+    this.repository = repository;
+  }
+
+  public List<OpenQuestionCard> getAll() {
+    return repository.findAll();
+  }
+
+  public Optional<OpenQuestionCard> getByID(Long id) {
+    if (Objects.isNull(id)) {
+      return Optional.empty();
     }
+    return repository.findByID(id);
+  }
 
-    public List<OpenQuestionCard> getAll() {
-        return repository.findAll();
+  public boolean contains(OpenQuestionCard task) {
+    if (isQuestionInvalid(task)) {
+      return false;
     }
+    return repository.findByID(task.getId()).isPresent();
+  }
 
-    public Optional<OpenQuestionCard> getById(Long id) {
-        if (Objects.isNull(id)) return Optional.empty();
-        return repository.findById(id);
+  public void save(OpenQuestionCard task) {
+    if (isQuestionInvalid(task)) {
+      return;
     }
-
-    public boolean contains(OpenQuestionCard card) {
-        if (iscardInvalid(card)) {
-            return false;
-        }
-        return repository.findById(card.getId()).isPresent();
+    if (contains(task)) {
+      repository.update(task);
+    } else {
+      repository.add(task);
     }
+  }
 
-    public void save(OpenQuestionCard card) {
-        if (iscardInvalid(card)) return;
-        if (contains(card)) repository.update(card);
-        else repository.add(card);
-    }
+  public void delete(Long id) { repository.remove(String.valueOf(id)); }
 
-    public void delete(OpenQuestionCard card) {
-        if (iscardInvalid(card)) return;
-        repository.remove(card.getId());
-    }
-
-
-    private boolean iscardInvalid(OpenQuestionCard card) {
-        return Objects.isNull(card) || Objects.isNull(card.getId());
-    }
-
+  private boolean isQuestionInvalid(OpenQuestionCard task) {
+    return Objects.isNull(task) || Objects.isNull(task.getId());
+  }
 }

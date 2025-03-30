@@ -6,13 +6,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface QuestionRepository {
-    List<OpenQuestionCard> findAll();
-
-    Optional<OpenQuestionCard> findById(Long id);
-
-    void add(OpenQuestionCard card);
-
-    void update(OpenQuestionCard card);
-
-    void remove(Long id);
+  List<OpenQuestionCard> findAll();
+  Optional<OpenQuestionCard> findByID(Long id);
+  void add(OpenQuestionCard question);
+  void update(OpenQuestionCard task);
+  void remove(String id);
 }
